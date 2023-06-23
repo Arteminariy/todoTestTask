@@ -34,7 +34,7 @@ export class Todo extends Model<Todo> {
   @ApiProperty({ description: 'ID пользователя', example: 'UUID' })
   @ForeignKey(() => User)
   @Column({
-    type: DataType.STRING,
+    type: DataType.UUID,
   })
   userId: string;
 
