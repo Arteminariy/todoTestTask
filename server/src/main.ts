@@ -10,7 +10,7 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
-    .setTitle('Бэкенд для проекта LearnLanguage')
+    .setTitle('Бэкенд для todo')
     .setTitle('Документация бэкенда')
     .setVersion('1.0.0')
     .addTag('Backend')

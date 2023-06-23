@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { UsersModule } from './users/users.module';
+import { TodosModule } from './todos/todos.module';
+import { User } from './users/entities/user.entity';
+import { Todo } from './todos/entities/todo.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,10 +19,13 @@ import { SequelizeModule } from '@nestjs/sequelize';
       username: process.env.POSTGRES_USER,
       password: String(process.env.POSTGRES_PASSWORD),
       database: process.env.POSTGRES_DB,
-      models: [],
+      models: [User, Todo],
       autoLoadModels: true,
       synchronize: true,
     }),
+    UsersModule,
+    TodosModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
