@@ -50,6 +50,12 @@ export class AuthService {
         email: authDto.email,
         password: hash,
       });
+      if (!newUser) {
+        throw new HttpException(
+          'Не удалось создать пользователя',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
       const tokens = await this.getTokens(newUser.id, newUser.email);
       await this.updateRTHash(newUser.id, tokens.refreshToken);
       return tokens;
