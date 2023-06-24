@@ -5,14 +5,12 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  Req,
+  HttpException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthDto } from './dto/';
 import { Tokens } from './interfaces';
-import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
 import { ATGuard, RTGuard } from './guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from './decorators';
 
@@ -22,17 +20,17 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Post('local/signIn')
-  @HttpCode(HttpStatus.CREATED)
-  signInLocal(@Body() authDto: AuthDto): Promise<Tokens> {
-    return this.authService.signInLocal(authDto);
+  @Post('local/signUp')
+  @HttpCode(HttpStatus.OK)
+  signUpLocal(@Body() authDto: AuthDto): Promise<Tokens | HttpException> {
+    return this.authService.signUpLocal(authDto);
   }
 
   @Public()
-  @Post('local/signUp')
-  @HttpCode(HttpStatus.OK)
-  signUpLocal(@Body() authDto: AuthDto): Promise<Tokens> {
-    return this.authService.signUpLocal(authDto);
+  @Post('local/signIn')
+  @HttpCode(HttpStatus.CREATED)
+  signInLocal(@Body() authDto: AuthDto): Promise<Tokens | HttpException> {
+    return this.authService.signInLocal(authDto);
   }
 
   @UseGuards(ATGuard)

@@ -1,19 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, DataType, HasMany, Model, Table } from 'sequelize-typescript';
 import { Todo } from 'src/todos/entities/todo.entity';
+import { v4 as uuidv4 } from 'uuid';
 
-interface UserCreationAttribute {
+interface UserCreationAttributes {
   email: string;
   password: string;
 }
 
 @Table({ tableName: 'users' })
-export class User extends Model<User, UserCreationAttribute> {
+export class User extends Model<User, UserCreationAttributes> {
   @ApiProperty({ description: 'ID пользователя', example: 'UUID' })
   @Column({
     type: DataType.UUID,
     unique: true,
     primaryKey: true,
+    allowNull: false,
+    defaultValue: () => uuidv4(),
   })
   id: string;
 

@@ -8,6 +8,7 @@ import {
   Table,
 } from 'sequelize-typescript';
 import { User } from 'src/users/entities/user.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Table({ tableName: 'todos' })
 export class Todo extends Model<Todo> {
@@ -16,6 +17,8 @@ export class Todo extends Model<Todo> {
     type: DataType.UUID,
     unique: true,
     primaryKey: true,
+    allowNull: false,
+    defaultValue: () => uuidv4(),
   })
   id: string;
 

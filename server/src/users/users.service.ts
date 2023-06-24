@@ -7,7 +7,8 @@ import { User } from './entities/user.entity';
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User) private userRepository: typeof User) {}
-  async create(createUserDto: CreateUserDto) {
+
+  async create(createUserDto: CreateUserDto): Promise<User | HttpException> {
     try {
       const user = await this.userRepository.create(createUserDto);
       if (!user) {
@@ -106,10 +107,17 @@ export class UsersService {
       );
     }
   }
-  async getByEmail(email: string) {
-    const user = await this.userRepository.findOne({
-      where: { email },
-    });
-    return user;
+  async getByEmail(email: string): Promise<User> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { email },
+      });
+      return user;
+    } catch (error) {
+      throw new HttpException(
+        'Ошибка при получении пользователя по email',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

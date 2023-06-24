@@ -5,19 +5,68 @@ import { AuthDto } from './dto/';
 import * as bcrypt from 'bcryptjs';
 import { Tokens } from './interfaces';
 import { JwtService } from '@nestjs/jwt';
+import { UsersService } from 'src/users/users.service';
+import { ValidationError } from 'sequelize';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User) private userRepository: typeof User,
+    private userService: UsersService,
     private JWTService: JwtService,
   ) {}
 
-  async signInLocal(authDto: AuthDto): Promise<Tokens> {
+  async signUpLocal(authDto: AuthDto): Promise<Tokens | HttpException> {
     try {
-      const user = await this.userRepository.findOne({
-        where: { email: authDto.email },
+      const candidate = await this.userService.getByEmail(authDto.email);
+      if (candidate) {
+        throw new HttpException(
+          'Пользователь с таким email уже существует',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const hashedPassword = await this.hashData(authDto.password);
+      const newUser = await this.userService.create({
+        ...authDto,
+        password: hashedPassword,
       });
+      if (!newUser) {
+        throw new HttpException(
+          'Не удалось создать пользователя, ошибка БД',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      if (newUser instanceof User) {
+        const tokens = await this.getTokens(newUser.id, newUser.email);
+        await this.updateRTHash(newUser.id, tokens.refreshToken);
+        return tokens;
+      }
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw new HttpException(
+          'Sequelize ValidationError',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
+        );
+      } else if (error.name === 'SequelizeUniqueConstraintError') {
+        throw new HttpException(
+          'SequelizeUniqueConstraintError',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
+        );
+      } else {
+        throw new HttpException(
+          'Ошибка при регистрации',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
+        );
+      }
+    }
+  }
+
+  async signInLocal(authDto: AuthDto): Promise<Tokens | HttpException> {
+    try {
+      const user = await this.userService.getByEmail(authDto.email);
       if (!user) {
         throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
       }
@@ -35,40 +84,29 @@ export class AuthService {
       await this.updateRTHash(user.id, tokens.refreshToken);
       return tokens;
     } catch (error) {
-      throw new HttpException(
-        'Ошибка при входе',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        { cause: error },
-      );
-    }
-  }
-
-  async signUpLocal(authDto: AuthDto): Promise<Tokens> {
-    try {
-      const hash = await this.hashData(authDto.password);
-      const newUser = await this.userRepository.create({
-        email: authDto.email,
-        password: hash,
-      });
-      if (!newUser) {
+      if (error instanceof ValidationError) {
         throw new HttpException(
-          'Не удалось создать пользователя',
-          HttpStatus.UNAUTHORIZED,
+          'Sequelize ValidationError',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
+        );
+      } else if (error.name === 'SequelizeUniqueConstraintError') {
+        throw new HttpException(
+          'SequelizeUniqueConstraintError',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
+        );
+      } else {
+        throw new HttpException(
+          'Ошибка при входе',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          { cause: error },
         );
       }
-      const tokens = await this.getTokens(newUser.id, newUser.email);
-      await this.updateRTHash(newUser.id, tokens.refreshToken);
-      return tokens;
-    } catch (error) {
-      throw new HttpException(
-        'Ошибка при регистрации',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        { cause: error },
-      );
     }
   }
 
-  async logout(userId: string) {
+  async logout(userId: string): Promise<{ message: string } | HttpException> {
     try {
       const user = await this.userRepository.findByPk(userId);
       if (!user) {
@@ -85,7 +123,10 @@ export class AuthService {
     }
   }
 
-  async refreshTokens(userId: string, rt: string) {
+  async refreshTokens(
+    userId: string,
+    rt: string,
+  ): Promise<Tokens | HttpException> {
     try {
       const user = await this.userRepository.findByPk(userId);
       if (!user || !user.hashedRT) {
@@ -98,14 +139,20 @@ export class AuthService {
       const tokens = await this.getTokens(user.id, user.email);
       await this.updateRTHash(user.id, tokens.refreshToken);
       return tokens;
-    } catch (error) {}
+    } catch (error) {
+      throw new HttpException(
+        'Указан неверный Refresh Token',
+        HttpStatus.UNAUTHORIZED,
+        { cause: error },
+      );
+    }
   }
 
-  async hashData(data: string) {
+  async hashData(data: string): Promise<string> {
     return await bcrypt.hash(data, 10);
   }
 
-  async updateRTHash(userId: string, rt: string) {
+  async updateRTHash(userId: string, rt: string): Promise<void> {
     const hash = await this.hashData(rt);
     const user = await this.userRepository.findByPk(userId);
     await user.update({ hashedRT: hash });
