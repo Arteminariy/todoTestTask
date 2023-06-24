@@ -1,64 +1,136 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UsersService } from 'src/users/users.service';
-import * as bcrypt from 'bcryptjs';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
 import { User } from 'src/users/entities/user.entity';
+import { AuthDto } from './dto/';
+import * as bcrypt from 'bcryptjs';
+import { Tokens } from './interfaces';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UsersService,
-    private jwtService: JwtService,
+    @InjectModel(User) private userRepository: typeof User,
+    private JWTService: JwtService,
   ) {}
 
-  async login(userDto: CreateUserDto) {
-    const user = await this.validateUser(userDto);
-    return this.generateToken(user);
-  }
-
-  async registration(userDto: CreateUserDto) {
-    const candidate = await this.userService.getByEmail(userDto.email);
-    if (candidate) {
-      throw new HttpException(
-        'Пользователь с таким email уже существует',
-        HttpStatus.BAD_REQUEST,
+  async signInLocal(authDto: AuthDto): Promise<Tokens> {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { email: authDto.email },
+      });
+      if (!user) {
+        throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
+      }
+      const passwordMatches = await bcrypt.compare(
+        authDto.password,
+        user.hashedRT,
       );
-    }
-    const hashedPassword = await bcrypt.hash(userDto.password, 5);
-    const user = await this.userService.create({
-      ...userDto,
-      password: hashedPassword,
-    });
-    if (user instanceof HttpException) {
+      if (!passwordMatches) {
+        throw new HttpException(
+          'Указан неверный пароль',
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
+      const tokens = await this.getTokens(user.id, user.email);
+      await this.updateRTHash(user.id, tokens.refreshToken);
+      return tokens;
+    } catch (error) {
       throw new HttpException(
-        'Не удалось зарегистрировать пользователя',
+        'Ошибка при входе',
         HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
       );
     }
-    return this.generateToken(user);
   }
 
-  private async generateToken(user: User) {
-    const payload = { login: user.email, id: user.id };
-    return { token: this.jwtService.sign(payload) };
-  }
-  private async validateUser(userDto: CreateUserDto) {
-    const user = await this.userService.getByEmail(userDto.email);
-    const passwordEquals = await bcrypt.compare(
-      userDto.password,
-      user.password,
-    );
-    if (user && passwordEquals) {
-      return user;
+  async signUpLocal(authDto: AuthDto): Promise<Tokens> {
+    try {
+      const hash = await this.hashData(authDto.password);
+      const newUser = await this.userRepository.create({
+        email: authDto.email,
+        password: hash,
+      });
+      const tokens = await this.getTokens(newUser.id, newUser.email);
+      await this.updateRTHash(newUser.id, tokens.refreshToken);
+      return tokens;
+    } catch (error) {
+      throw new HttpException(
+        'Ошибка при регистрации',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
     }
-    throw new UnauthorizedException({
-      message: 'Некорректный email или пароль',
-    });
+  }
+
+  async logout(userId: string) {
+    try {
+      const user = await this.userRepository.findByPk(userId);
+      if (!user) {
+        throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
+      }
+      await user.update({ hashedRT: null });
+      return { message: 'Выход из системы совершён успешно' };
+    } catch (error) {
+      throw new HttpException(
+        'Ошибка при выходе из системы',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
+    }
+  }
+
+  async refreshTokens(userId: string, rt: string) {
+    try {
+      const user = await this.userRepository.findByPk(userId);
+      if (!user || !user.hashedRT) {
+        throw new HttpException('Пользователь не найден', HttpStatus.NOT_FOUND);
+      }
+      const rtMatches = bcrypt.compare(rt, user.hashedRT);
+      if (!rtMatches) {
+        throw new HttpException('Указан неверный Refresh Token', 401);
+      }
+      const tokens = await this.getTokens(user.id, user.email);
+      await this.updateRTHash(user.id, tokens.refreshToken);
+      return tokens;
+    } catch (error) {}
+  }
+
+  async hashData(data: string) {
+    return await bcrypt.hash(data, 10);
+  }
+
+  async updateRTHash(userId: string, rt: string) {
+    const hash = await this.hashData(rt);
+    const user = await this.userRepository.findByPk(userId);
+    await user.update({ hashedRT: hash });
+  }
+
+  async getTokens(userId: string, email: string): Promise<Tokens> {
+    const [at, rt] = await Promise.all([
+      this.JWTService.signAsync(
+        {
+          sub: userId,
+          email,
+        },
+        {
+          expiresIn: '15m',
+          secret: process.env.JWT_ACCESS_KEY,
+        },
+      ),
+      this.JWTService.signAsync(
+        {
+          sub: userId,
+          email,
+        },
+        {
+          expiresIn: '7d',
+          secret: process.env.JWT_REFRESH_KEY,
+        },
+      ),
+    ]);
+    return {
+      accessToken: at,
+      refreshToken: rt,
+    };
   }
 }

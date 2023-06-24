@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const PORT = process.env.PORT || 5000;
@@ -8,6 +9,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableCors();
+  app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('Бэкенд для todo')

@@ -1,20 +1,55 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags } from '@nestjs/swagger';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { AuthDto } from './dto/';
+import { Tokens } from './interfaces';
+import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
+import { ATGuard, RTGuard } from './guards';
+import { GetCurrentUser, GetCurrentUserId, Public } from './decorators';
 
 @ApiTags('Авторизация')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
-  login(@Body() createUserDto: CreateUserDto) {
-    return this.authService.login(createUserDto);
+  @Public()
+  @Post('local/signIn')
+  @HttpCode(HttpStatus.CREATED)
+  signInLocal(@Body() authDto: AuthDto): Promise<Tokens> {
+    return this.authService.signInLocal(authDto);
   }
 
-  @Post('registration')
-  registration(@Body() createUserDto: CreateUserDto) {
-    return this.authService.registration(createUserDto);
+  @Public()
+  @Post('local/signUp')
+  @HttpCode(HttpStatus.OK)
+  signUpLocal(@Body() authDto: AuthDto): Promise<Tokens> {
+    return this.authService.signUpLocal(authDto);
+  }
+
+  @UseGuards(ATGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@GetCurrentUserId() userId: string) {
+    return this.authService.logout(userId);
+  }
+
+  @Public()
+  @UseGuards(RTGuard)
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refreshTokens(
+    @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetCurrentUserId() userId: string,
+  ) {
+    return this.authService.refreshTokens(userId, refreshToken);
   }
 }

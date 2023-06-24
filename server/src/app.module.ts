@@ -6,6 +6,8 @@ import { TodosModule } from './todos/todos.module';
 import { User } from './users/entities/user.entity';
 import { Todo } from './todos/entities/todo.entity';
 import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ATGuard } from './auth/guards';
 
 @Module({
   imports: [
@@ -26,6 +28,12 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     TodosModule,
     AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ATGuard,
+    },
   ],
 })
 export class AppModule {}

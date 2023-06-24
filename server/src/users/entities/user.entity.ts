@@ -32,6 +32,12 @@ export class User extends Model<User, UserCreationAttribute> {
   })
   password: string;
 
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  hashedRT?: string;
+
   @HasMany(() => Todo)
   todos: Todo[];
 }
