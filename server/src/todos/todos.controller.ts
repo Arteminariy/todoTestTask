@@ -11,19 +11,27 @@ import {
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { GetCurrentUserId } from 'src/auth/decorators';
 
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
   @Post()
-  create(@Body() createTodoDto: CreateTodoDto) {
-    return this.todosService.create(createTodoDto);
+  create(
+    @Body() createTodoDto: CreateTodoDto,
+    @GetCurrentUserId() userId: string,
+  ) {
+    return this.todosService.create(createTodoDto, userId);
   }
 
   @Get()
-  findAll(@Query('limit') limit: number, @Query('offset') offset: number) {
-    return this.todosService.findAll(limit, offset);
+  findAll(
+    @Query('limit') limit: number,
+    @Query('offset') offset: number,
+    @GetCurrentUserId() userId: string,
+  ) {
+    return this.todosService.findAllByUserId(limit, offset, userId);
   }
 
   @Get(':id')

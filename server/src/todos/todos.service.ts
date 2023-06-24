@@ -7,10 +7,15 @@ import { Todo } from './entities/todo.entity';
 @Injectable()
 export class TodosService {
   constructor(@InjectModel(Todo) private todoRepository: typeof Todo) {}
-  async create(createTodoDto: CreateTodoDto) {
+
+  async create(
+    createTodoDto: CreateTodoDto,
+    userId: string,
+  ): Promise<Todo | HttpException> {
     try {
       const todo = await this.todoRepository.create({
         ...createTodoDto,
+        userId,
         isDone: false,
       });
       if (!todo) {
@@ -31,9 +36,40 @@ export class TodosService {
     }
   }
 
-  async findAll(limit: number, offset: number) {
+  // async findAll(
+  //   limit: number,
+  //   offset: number,
+  // ): Promise<{ count: number; rows: Todo[] } | HttpException> {
+  //   try {
+  //     const { count, rows } = await this.todoRepository.findAndCountAll({
+  //       limit: limit,
+  //       offset: offset,
+  //       include: { all: true },
+  //     });
+  //     if (!rows) {
+  //       throw new HttpException(
+  //         `Не удалось получить задачи`,
+  //         HttpStatus.INTERNAL_SERVER_ERROR,
+  //       );
+  //     }
+  //     return { count, rows };
+  //   } catch (error) {
+  //     throw new HttpException(
+  //       'Ошибка при получении задачи',
+  //       HttpStatus.INTERNAL_SERVER_ERROR,
+  //       { cause: error },
+  //     );
+  //   }
+  // }
+
+  async findAllByUserId(
+    limit: number,
+    offset: number,
+    userId: string,
+  ): Promise<{ count: number; rows: Todo[] } | HttpException> {
     try {
       const { count, rows } = await this.todoRepository.findAndCountAll({
+        where: { userId },
         limit: limit,
         offset: offset,
         include: { all: true },
@@ -54,7 +90,7 @@ export class TodosService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Todo | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
@@ -73,7 +109,10 @@ export class TodosService {
     }
   }
 
-  async update(id: string, updateTodoDto: UpdateTodoDto) {
+  async update(
+    id: string,
+    updateTodoDto: UpdateTodoDto,
+  ): Promise<Todo | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
@@ -93,7 +132,7 @@ export class TodosService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<{ message: string } | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
