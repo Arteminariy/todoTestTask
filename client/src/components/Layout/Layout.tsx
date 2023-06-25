@@ -6,7 +6,7 @@ const Layout: FC = () => {
 	return (
 		<>
 			<header className={styles.header}>Тестовое задание</header>
-			<Outlet/>
+			<main><Outlet/></main>
 			<footer className={styles.footer}></footer>
 		</>
 	);

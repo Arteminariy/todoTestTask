@@ -1,0 +1,15 @@
+.title {
+	display: flex;
+	justify-content: center;
+	align-content: center;
+}
+.link{
+	color: #000;
+	text-decoration: none;
+	transition: all .3s;
+	font-size: 1.5em;
+
+	&:hover {
+		color: #ff4646;
+	}
+}
