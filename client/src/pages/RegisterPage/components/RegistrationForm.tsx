@@ -1,104 +1,124 @@
-import { FC, FormEvent, useState } from 'react';
+import { FC, useState } from 'react';
 import styles from './RegistrationForm.module.scss';
-import { Button, Checkbox, Form, Input } from 'antd';
-import {
-	EyeInvisibleOutlined,
-	EyeTwoTone,
-	LockOutlined,
-	UserOutlined,
-} from '@ant-design/icons';
-import { useDispatch } from 'react-redux';
-import { getTokens, registerUser } from '../../../store/slices/authSlice';
+import { Button, Form, Input } from 'antd';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { register, setError } from '../../../store/slices/authSlice';
 import { Link, useNavigate } from 'react-router-dom';
+import { AppDispatch, RootState } from '../../../store/store';
+import { useDispatch, useSelector } from 'react-redux';
 
 const RegistrationForm: FC = () => {
-	const nav = useNavigate();
+	const navigate = useNavigate();
+	const dispatch = useDispatch<AppDispatch>();
+	const [error, setLocalError] = useState<boolean>(false);
+	const { loading, isAuth } = useSelector((state: RootState) => state.auth);
 
-	const dispatch = useDispatch();
-
-	const handleLogin = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		// Get the email and password from the form inputs
-		const email = event.currentTarget.email.value;
-		const password = event.currentTarget.password.value;
-		// Dispatch the getTokens action with the credentials
-		dispatch(getTokens({ email, password }));
-	};
-
-	const handleRegister = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		// Get the email and password from the form inputs
-		const email = event.currentTarget.email.value;
-		const password = event.currentTarget.password.value;
-		const confirmPassword = event.currentTarget.confirmPassword.value;
-		// Check if the password and confirm password match
-		if (password === confirmPassword) {
-			// Dispatch the registerUser action with the credentials
-			dispatch(registerUser({ email, password }));
+	const handleRegister = async ({
+		email,
+		password,
+		passwordConfirm,
+	}: {
+		email: string;
+		password: string;
+		passwordConfirm: string;
+	}) => {
+		if (password !== passwordConfirm) {
+			setLocalError(true);
 		} else {
-			// Show an error message if they don't match
-			alert('Пароли не совпадают');
+			dispatch(register({ email: email, password: password }))
+				.then(() => {
+					setError(null);
+					navigate('/');
+				})
+				.catch((err) => {
+					setError(err.message);
+					setLocalError(true);
+				});
 		}
-	};
-
-	const onFinish = (values: any) => {
-		console.log('Received values of form: ', values);
 	};
 
 	return (
 		<div className={styles.container}>
 			<h2>Регистрация</h2>
-			<Form
-				name="normal_login"
-				className={styles.loginForm}
-				initialValues={{ remember: true }}
-				onFinish={onFinish}
-			>
-				<Form.Item
-					name="email"
-					rules={[
-						{
-							required: true,
-							message: 'Please input your Email!',
-						},
-					]}
+			{isAuth ? (
+				<>
+					<p>Вы уже вошли в систему</p>
+					<Link className={styles.link} to="/">
+						Главная
+					</Link>
+				</>
+			) : (
+				<Form
+					name="normal_register"
+					className={styles.registerForm}
+					initialValues={{ remember: true }}
+					onFinish={handleRegister}
 				>
-					<Input
-						prefix={
-							<UserOutlined className="site-form-item-icon" />
-						}
-						type="email"
-						placeholder="Email"
-					/>
-				</Form.Item>
-				<Form.Item
-					name="password"
-					rules={[
-						{
-							required: true,
-							message: 'Please input your Password!',
-						},
-					]}
-				>
-					<Input
-						prefix={
-							<LockOutlined className="site-form-item-icon" />
-						}
-						type="password"
-						placeholder="Password"
-					/>
-				</Form.Item>
-				<Form.Item>
-					<Button
-						type="primary"
-						htmlType="submit"
-						className={styles.loginFormButton}
+					<Form.Item
+						name="email"
+						rules={[
+							{
+								required: true,
+								message: 'Please input your Email!',
+							},
+						]}
 					>
-						Log in
-					</Button>
-					Or <a href="">register now!</a>
-				</Form.Item>
-			</Form>
+						<Input
+							prefix={
+								<UserOutlined className="site-form-item-icon" />
+							}
+							type="email"
+							placeholder="Email"
+						/>
+					</Form.Item>
+					<Form.Item
+						name="password"
+						rules={[
+							{
+								required: true,
+								message: 'Please input your Password!',
+							},
+						]}
+					>
+						<Input
+							prefix={
+								<LockOutlined className="site-form-item-icon" />
+							}
+							type="password"
+							placeholder="Password"
+						/>
+					</Form.Item>
+					<Form.Item
+						name="passwordConfirm"
+						rules={[
+							{
+								required: true,
+								message: 'Please input your Password!',
+							},
+						]}
+					>
+						<Input
+							prefix={
+								<LockOutlined className="site-form-item-icon" />
+							}
+							type="password"
+							placeholder="Password"
+						/>
+					</Form.Item>
+					{error && <Form.Item>Некорректные данные</Form.Item>}
+					{loading && <Form.Item>Запрос идет</Form.Item>}
+					<Form.Item>
+						<Button
+							type="primary"
+							htmlType="submit"
+							className={styles.registrationFormButton}
+						>
+							Войти
+						</Button>
+						или <Link to="/register">Зарегистрироваться</Link>
+					</Form.Item>
+				</Form>
+			)}
 		</div>
 	);
 };

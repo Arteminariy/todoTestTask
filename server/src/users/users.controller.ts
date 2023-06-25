@@ -11,7 +11,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Public } from 'src/auth/decorators';
+import { GetCurrentUserId } from 'src/auth/decorators';
 
 @Controller('users')
 export class UsersController {
@@ -23,13 +23,8 @@ export class UsersController {
   }
 
   @Get()
-  findAll(@Query('limit') limit: number, @Query('offset') offset: number) {
-    return this.usersService.findAll(limit, offset);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(@GetCurrentUserId() userId: string) {
+    return this.usersService.findOne(userId);
   }
 
   @Patch(':id')

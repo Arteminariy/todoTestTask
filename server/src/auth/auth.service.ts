@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from 'src/users/entities/user.entity';
 import { AuthDto } from './dto/';
@@ -67,7 +67,10 @@ export class AuthService {
   async signInLocal(authDto: AuthDto): Promise<Tokens | HttpException> {
     try {
       const user = await this.userService.getByEmail(authDto.email);
+      console.log(user);
+
       if (!user) {
+        console.log('Пользователь не найден');
         return new HttpException(
           'Пользователь не найден',
           HttpStatus.NOT_FOUND,
@@ -77,8 +80,10 @@ export class AuthService {
         authDto.password,
         user.password,
       );
+      console.log(passwordMatches);
 
       if (!passwordMatches) {
+        console.log('Указан неверный пароль');
         return new HttpException(
           'Указан неверный пароль',
           HttpStatus.UNAUTHORIZED,
@@ -86,6 +91,8 @@ export class AuthService {
       }
 
       const tokens = await this.getTokens(user.id, user.email);
+      console.log(tokens);
+
       await this.updateRTHash(user.id, tokens.refreshToken);
       return tokens;
     } catch (error) {

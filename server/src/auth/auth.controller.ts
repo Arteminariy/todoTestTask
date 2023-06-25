@@ -21,21 +21,22 @@ export class AuthController {
 
   @Public()
   @Post('local/signUp')
-  @HttpCode(HttpStatus.OK)
   signUpLocal(@Body() authDto: AuthDto): Promise<Tokens | HttpException> {
     return this.authService.signUpLocal(authDto);
   }
 
   @Public()
   @Post('local/signIn')
-  @HttpCode(HttpStatus.CREATED)
-  signInLocal(@Body() authDto: AuthDto): Promise<Tokens | HttpException> {
-    return this.authService.signInLocal(authDto);
+  async signInLocal(@Body() authDto: AuthDto): Promise<Tokens | HttpException> {
+    const result = await this.authService.signInLocal(authDto);
+    if (result instanceof HttpException) {
+      throw result;
+    }
+    return result;
   }
 
   @UseGuards(ATGuard)
   @Post('logout')
-  @HttpCode(HttpStatus.OK)
   logout(@GetCurrentUserId() userId: string) {
     return this.authService.logout(userId);
   }
@@ -43,7 +44,6 @@ export class AuthController {
   @Public()
   @UseGuards(RTGuard)
   @Post('refresh')
-  @HttpCode(HttpStatus.OK)
   refreshTokens(
     @GetCurrentUser('refreshToken') refreshToken: string,
     @GetCurrentUserId() userId: string,
