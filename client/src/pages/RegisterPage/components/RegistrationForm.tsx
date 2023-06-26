@@ -113,9 +113,9 @@ const RegistrationForm: FC = () => {
 							htmlType="submit"
 							className={styles.registrationFormButton}
 						>
-							Войти
+							Зарегистрироваться
 						</Button>
-						или <Link to="/register">Зарегистрироваться</Link>
+						или <Link to="/login">Войти</Link>
 					</Form.Item>
 				</Form>
 			)}
