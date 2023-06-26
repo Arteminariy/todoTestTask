@@ -83,7 +83,7 @@ export class TodosService {
     }
   }
 
-  async update(id: string): Promise<Todo | HttpException> {
+  async check(id: string): Promise<Todo | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
@@ -94,6 +94,29 @@ export class TodosService {
       }
       const isDone = !todo.isDone;
       await todo.update({ isDone: isDone });
+      return todo;
+    } catch (error) {
+      throw new HttpException(
+        'Ошибка при изменении задачи',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
+    }
+  }
+
+  async update(
+    id: string,
+    updateTodoDto: UpdateTodoDto,
+  ): Promise<Todo | HttpException> {
+    try {
+      const todo = await this.todoRepository.findByPk(id);
+      if (!todo) {
+        throw new HttpException(
+          `Задача c id: ${id} не найден`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      await todo.update(updateTodoDto);
       return todo;
     } catch (error) {
       throw new HttpException(

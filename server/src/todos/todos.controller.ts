@@ -12,6 +12,7 @@ import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { GetCurrentUserId } from 'src/auth/decorators';
 import { ApiTags } from '@nestjs/swagger';
+import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @ApiTags('Todo')
 @Controller('todos')
@@ -41,8 +42,13 @@ export class TodosController {
   }
 
   @Patch('check/:id')
-  update(@Param('id') id: string) {
-    return this.todosService.update(id);
+  check(@Param('id') id: string) {
+    return this.todosService.check(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
+    return this.todosService.update(id, updateTodoDto);
   }
 
   @Delete(':id')
