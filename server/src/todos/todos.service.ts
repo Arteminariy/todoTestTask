@@ -36,32 +36,6 @@ export class TodosService {
     }
   }
 
-  // async findAll(
-  //   limit: number,
-  //   offset: number,
-  // ): Promise<{ count: number; rows: Todo[] } | HttpException> {
-  //   try {
-  //     const { count, rows } = await this.todoRepository.findAndCountAll({
-  //       limit: limit,
-  //       offset: offset,
-  //       include: { all: true },
-  //     });
-  //     if (!rows) {
-  //       throw new HttpException(
-  //         `Не удалось получить задачи`,
-  //         HttpStatus.INTERNAL_SERVER_ERROR,
-  //       );
-  //     }
-  //     return { count, rows };
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       'Ошибка при получении задачи',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //       { cause: error },
-  //     );
-  //   }
-  // }
-
   async findAllByUserId(
     limit: number,
     offset: number,
