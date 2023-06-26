@@ -9,19 +9,28 @@ import AddTodo from '../AddTodo/AddTodo';
 const TodoList: FC = () => {
 	const dispatch = useDispatch<AppDispatch>();
 
+	const todos = useSelector((state: RootState) => state.todo.todos);
+
 	useEffect(() => {
 		dispatch(getTodos());
-	}, [dispatch]);
-	const todos = useSelector((state: RootState) => state.todo.todos);
-	return todos.length !== 0 ? (
+	}, []);
+
+	return (
 		<ul className={styles.list}>
-			{todos.map((todo) => {
-				return <TodoItem todo={todo} />;
-			})}
-			<AddTodo/>
+			{todos.length !== 0 ? (
+				<>
+					{todos.map((todo) => {
+						return <TodoItem todo={todo} />;
+					})}
+					<AddTodo />
+				</>
+			) : (
+				<>
+					<p>У вас нет задач</p>
+					<AddTodo />
+				</>
+			)}
 		</ul>
-	) : (
-		<p>У вас нет задач</p>
 	);
 };
 

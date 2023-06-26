@@ -83,10 +83,7 @@ export class TodosService {
     }
   }
 
-  async update(
-    id: string,
-    updateTodoDto: UpdateTodoDto,
-  ): Promise<Todo | HttpException> {
+  async update(id: string): Promise<Todo | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
@@ -95,7 +92,8 @@ export class TodosService {
           HttpStatus.NOT_FOUND,
         );
       }
-      await todo.update(updateTodoDto);
+      const isDone = !todo.isDone;
+      await todo.update({ isDone: isDone });
       return todo;
     } catch (error) {
       throw new HttpException(
@@ -106,7 +104,9 @@ export class TodosService {
     }
   }
 
-  async remove(id: string): Promise<{ message: string } | HttpException> {
+  async remove(
+    id: string,
+  ): Promise<{ message: string; id: string } | HttpException> {
     try {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
@@ -116,7 +116,7 @@ export class TodosService {
         );
       }
       await todo.destroy();
-      return { message: `Задача с id: ${id} удален` };
+      return { message: `Задача с id: ${id} удален`, id: id };
     } catch (error) {
       throw new HttpException(
         'Ошибка при удалении задачи',

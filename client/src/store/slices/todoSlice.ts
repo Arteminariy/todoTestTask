@@ -1,4 +1,9 @@
-import { Reducer, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+	PayloadAction,
+	Reducer,
+	createAsyncThunk,
+	createSlice,
+} from '@reduxjs/toolkit';
 import { Todo, TodosPaginationResponse } from '../../types';
 import { AxiosError } from 'axios';
 import { TodoService } from '../../http/services/todo.service';
@@ -13,6 +18,30 @@ export const getTodos = createAsyncThunk(
 	'todo/getTodos',
 	async (): Promise<TodosPaginationResponse> => {
 		const response = await TodoService.getUserTodos();
+		return response.data;
+	}
+);
+
+export const createTodo = createAsyncThunk(
+	'todo/createTodo',
+	async (text: string): Promise<Todo> => {
+		const response = await TodoService.createTodo(text);
+		return response.data;
+	}
+);
+
+export const deleteTodo = createAsyncThunk(
+	'todo/deleteTodo',
+	async (id: string): Promise<{ message: string; id: string }> => {
+		const response = await TodoService.deleteTodo(id);
+		return response.data;
+	}
+);
+
+export const checkTodo = createAsyncThunk(
+	'todo/checkTodo',
+	async (id: string): Promise<Todo> => {
+		const response = await TodoService.checkTodo(id);
 		return response.data;
 	}
 );
@@ -39,6 +68,34 @@ const todoSlice = createSlice({
 			state.loading = false;
 			state.error = (action.payload as AxiosError).message;
 			state.todos = [];
+		});
+		builder.addCase(createTodo.pending, (state) => {
+			state.loading = true;
+			state.error = null;
+		});
+		builder.addCase(createTodo.fulfilled, (state, action) => {
+			state.loading = false;
+			state.error = null;
+			state.todos.push(action.payload);
+		});
+		builder.addCase(createTodo.rejected, (state, action) => {
+			state.loading = false;
+			state.error = (action.payload as AxiosError).message;
+		});
+		builder.addCase(deleteTodo.pending, (state) => {
+			state.loading = true;
+			state.error = null;
+		});
+		builder.addCase(deleteTodo.fulfilled, (state, action) => {
+			state.loading = false;
+			state.error = null;
+			state.todos = state.todos.filter(
+				(todo) => todo.id !== action.payload.id
+			);
+		});
+		builder.addCase(deleteTodo.rejected, (state, action) => {
+			state.loading = false;
+			state.error = (action.payload as AxiosError).message;
 		});
 	},
 });
