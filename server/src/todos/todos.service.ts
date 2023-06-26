@@ -88,7 +88,7 @@ export class TodosService {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
         throw new HttpException(
-          `Задача c id: ${id} не найден`,
+          `Задача c id: ${id} не найдена`,
           HttpStatus.NOT_FOUND,
         );
       }
@@ -112,7 +112,7 @@ export class TodosService {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
         throw new HttpException(
-          `Задача c id: ${id} не найден`,
+          `Задача c id: ${id} не найдена`,
           HttpStatus.NOT_FOUND,
         );
       }
@@ -134,7 +134,7 @@ export class TodosService {
       const todo = await this.todoRepository.findByPk(id);
       if (!todo) {
         throw new HttpException(
-          `Задача c id: ${id} не найден`,
+          `Задача c id: ${id} не найдена`,
           HttpStatus.NOT_FOUND,
         );
       }
