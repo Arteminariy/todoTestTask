@@ -1,5 +1,5 @@
 import { Reducer, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { Todo } from '../../types';
+import { Todo, TodosPaginationResponse } from '../../types';
 import { AxiosError } from 'axios';
 import { TodoService } from '../../http/services/todo.service';
 
@@ -10,8 +10,8 @@ const initialState = {
 };
 
 export const getTodos = createAsyncThunk(
-	'auth/login',
-	async (): Promise<Todo[]> => {
+	'todo/getTodos',
+	async (): Promise<TodosPaginationResponse> => {
 		const response = await TodoService.getUserTodos();
 		return response.data;
 	}
@@ -33,7 +33,7 @@ const todoSlice = createSlice({
 		builder.addCase(getTodos.fulfilled, (state, action) => {
 			state.loading = false;
 			state.error = null;
-			state.todos = action.payload;
+			state.todos = action.payload.rows;
 		});
 		builder.addCase(getTodos.rejected, (state, action) => {
 			state.loading = false;
@@ -44,4 +44,4 @@ const todoSlice = createSlice({
 });
 export const { setError } = todoSlice.actions;
 
-export const authReducer = todoSlice.reducer as Reducer<typeof initialState>;
+export const todoReducer = todoSlice.reducer as Reducer<typeof initialState>;
