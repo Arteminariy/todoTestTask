@@ -1,1 +1,2 @@
-export * from './tokens.interface';
+export * from './Tokens.interface';
+export * from './LogoutResponse.interface';

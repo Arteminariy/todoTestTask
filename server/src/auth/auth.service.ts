@@ -1,12 +1,11 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from 'src/users/entities/user.entity';
 import { AuthDto } from './dto/';
 import * as bcrypt from 'bcrypt';
-import { Tokens } from './interfaces';
+import { LogoutResponse, Tokens } from './interfaces';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
-import { ValidationError } from 'sequelize';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +31,7 @@ export class AuthService {
       });
       if (!newUser) {
         return new HttpException(
-          'Не удалось создать пользователя, ошибка БД',
+          'Не удалось создать пользователя',
           HttpStatus.UNAUTHORIZED,
         );
       }
@@ -42,25 +41,11 @@ export class AuthService {
         return tokens;
       }
     } catch (error) {
-      if (error instanceof ValidationError) {
-        return new HttpException(
-          'Sequelize ValidationError',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      } else if (error.name === 'SequelizeUniqueConstraintError') {
-        return new HttpException(
-          'SequelizeUniqueConstraintError',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      } else {
-        return new HttpException(
-          'Ошибка при регистрации',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      }
+      return new HttpException(
+        'Ошибка при регистрации',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
     }
   }
 
@@ -70,7 +55,6 @@ export class AuthService {
       console.log(user);
 
       if (!user) {
-        console.log('Пользователь не найден');
         return new HttpException(
           'Пользователь не найден',
           HttpStatus.NOT_FOUND,
@@ -83,7 +67,6 @@ export class AuthService {
       console.log(passwordMatches);
 
       if (!passwordMatches) {
-        console.log('Указан неверный пароль');
         return new HttpException(
           'Указан неверный пароль',
           HttpStatus.UNAUTHORIZED,
@@ -96,29 +79,15 @@ export class AuthService {
       await this.updateRTHash(user.id, tokens.refreshToken);
       return tokens;
     } catch (error) {
-      if (error instanceof ValidationError) {
-        return new HttpException(
-          'Sequelize ValidationError',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      } else if (error.name === 'SequelizeUniqueConstraintError') {
-        return new HttpException(
-          'SequelizeUniqueConstraintError',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      } else {
-        return new HttpException(
-          'Ошибка при входе',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          { cause: error },
-        );
-      }
+      return new HttpException(
+        'Ошибка при входе',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
     }
   }
 
-  async logout(userId: string): Promise<{ message: string } | HttpException> {
+  async logout(userId: string): Promise<LogoutResponse | HttpException> {
     try {
       const user = await this.userRepository.findByPk(userId);
       if (!user) {
@@ -152,15 +121,18 @@ export class AuthService {
       }
       const rtMatches = bcrypt.compare(rt, user.hashedRT);
       if (!rtMatches) {
-        return new HttpException('Указан неверный Refresh Token', 401);
+        return new HttpException(
+          'Указан неверный Refresh Token',
+          HttpStatus.UNAUTHORIZED,
+        );
       }
       const tokens = await this.getTokens(user.id, user.email);
       await this.updateRTHash(user.id, tokens.refreshToken);
       return tokens;
     } catch (error) {
       return new HttpException(
-        'Указан неверный Refresh Token',
-        HttpStatus.UNAUTHORIZED,
+        'Ошибка при получении токенов',
+        HttpStatus.INTERNAL_SERVER_ERROR,
         { cause: error },
       );
     }
