@@ -46,6 +46,14 @@ export const checkTodo = createAsyncThunk(
 	}
 );
 
+export const updateTodo = createAsyncThunk(
+	'todo/updateTodo',
+	async ({ id, text }: { id: string; text: string }): Promise<Todo> => {
+		const response = await TodoService.updateTodo(id, text);
+		return response.data;
+	}
+);
+
 const todoSlice = createSlice({
 	name: 'todo',
 	initialState,
@@ -79,6 +87,24 @@ const todoSlice = createSlice({
 			state.todos.push(action.payload);
 		});
 		builder.addCase(createTodo.rejected, (state, action) => {
+			state.loading = false;
+			state.error = (action.payload as AxiosError).message;
+		});
+		builder.addCase(updateTodo.pending, (state) => {
+			state.loading = true;
+			state.error = null;
+		});
+		builder.addCase(updateTodo.fulfilled, (state, action) => {
+			state.loading = false;
+			state.error = null;
+			const index = state.todos.findIndex(
+				(todo) => todo.id === action.payload.id
+			);
+			if (index > -1) {
+				state.todos[index] = action.payload;
+			}
+		});
+		builder.addCase(updateTodo.rejected, (state, action) => {
 			state.loading = false;
 			state.error = (action.payload as AxiosError).message;
 		});

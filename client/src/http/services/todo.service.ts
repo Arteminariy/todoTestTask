@@ -15,4 +15,7 @@ export class TodoService {
 	static checkTodo(id: string): Promise<AxiosResponse<Todo>> {
 		return api.patch<Todo>(`/todos/check/${id}`)
 	}
+	static updateTodo(id: string, text: string): Promise<AxiosResponse<Todo>> {
+		return api.patch<Todo>(`/todos/${id}`, { text: text })
+	}
 }
