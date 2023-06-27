@@ -1,5 +1,4 @@
 import {
-	PayloadAction,
 	Reducer,
 	createAsyncThunk,
 	createSlice,
@@ -9,15 +8,17 @@ import { AxiosError } from 'axios';
 import { TodoService } from '../../http/services/todo.service';
 
 const initialState = {
-	todos: [] as Todo[],
+	page: 1 as number,
+	count: 0 as number,
+	rows: [] as Todo[],
 	loading: false as boolean,
 	error: null as string | null,
 };
 
 export const getTodos = createAsyncThunk(
 	'todo/getTodos',
-	async (): Promise<TodosPaginationResponse> => {
-		const response = await TodoService.getUserTodos();
+	async ({limit, offset}: {limit: number, offset: number}): Promise<TodosPaginationResponse> => {
+		const response = await TodoService.getUserTodos({limit, offset});
 		return response.data;
 	}
 );
@@ -61,6 +62,9 @@ const todoSlice = createSlice({
 		setError(state, action) {
 			state.error = action.payload;
 		},
+		setPage(state, action) {
+			state.page = action.payload;
+		},
 	},
 	extraReducers: (builder) => {
 		builder.addCase(getTodos.pending, (state) => {
@@ -70,12 +74,16 @@ const todoSlice = createSlice({
 		builder.addCase(getTodos.fulfilled, (state, action) => {
 			state.loading = false;
 			state.error = null;
-			state.todos = action.payload.rows;
+			state.page = action.meta.arg.offset / action.meta.arg.limit + 1;
+			state.count = action.payload.count;
+			state.rows = action.payload.rows;
 		});
 		builder.addCase(getTodos.rejected, (state, action) => {
 			state.loading = false;
 			state.error = (action.payload as AxiosError).message;
-			state.todos = [];
+			state.page = 1;
+			state.count = 0;
+			state.rows = [];
 		});
 		builder.addCase(createTodo.pending, (state) => {
 			state.loading = true;
@@ -84,7 +92,7 @@ const todoSlice = createSlice({
 		builder.addCase(createTodo.fulfilled, (state, action) => {
 			state.loading = false;
 			state.error = null;
-			state.todos.push(action.payload);
+			state.rows.push(action.payload);
 		});
 		builder.addCase(createTodo.rejected, (state, action) => {
 			state.loading = false;
@@ -97,11 +105,11 @@ const todoSlice = createSlice({
 		builder.addCase(updateTodo.fulfilled, (state, action) => {
 			state.loading = false;
 			state.error = null;
-			const index = state.todos.findIndex(
+			const index = state.rows.findIndex(
 				(todo) => todo.id === action.payload.id
 			);
 			if (index > -1) {
-				state.todos[index] = action.payload;
+				state.rows[index] = action.payload;
 			}
 		});
 		builder.addCase(updateTodo.rejected, (state, action) => {
@@ -115,7 +123,7 @@ const todoSlice = createSlice({
 		builder.addCase(deleteTodo.fulfilled, (state, action) => {
 			state.loading = false;
 			state.error = null;
-			state.todos = state.todos.filter(
+			state.rows = state.rows.filter(
 				(todo) => todo.id !== action.payload.id
 			);
 		});
@@ -125,6 +133,6 @@ const todoSlice = createSlice({
 		});
 	},
 });
-export const { setError } = todoSlice.actions;
+export const { setError, setPage } = todoSlice.actions;
 
 export const todoReducer = todoSlice.reducer as Reducer<typeof initialState>;

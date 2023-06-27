@@ -5,15 +5,26 @@ import { getTodos } from '../../../../store/slices/todoSlice';
 import TodoItem from '../TodoItem/TodoItem';
 import styles from './TodoList.module.scss';
 import AddTodo from '../AddTodo/AddTodo';
+import { Pagination } from 'antd';
 
 const TodoList: FC = () => {
 	const dispatch = useDispatch<AppDispatch>();
 
-	const todos = useSelector((state: RootState) => state.todo.todos);
+	const todos = useSelector((state: RootState) => state.todo.rows);
+	const count = useSelector((state: RootState) => state.todo.count);
+	const page = useSelector((state: RootState) => state.todo.page);
 
 	useEffect(() => {
-		dispatch(getTodos());
-	}, []);
+		const limit = 5;
+		const offset = (page - 1) * limit;
+		dispatch(getTodos({ limit, offset }));
+	}, [dispatch, page, todos.length]);
+
+	const handlePageChange = (newPage: number) => {
+		const limit = 5;
+		const offset = (newPage - 1) * limit;
+		dispatch(getTodos({ limit, offset }));
+	};
 
 	return (
 		<ul className={styles.list}>
@@ -22,6 +33,12 @@ const TodoList: FC = () => {
 					{todos.map((todo) => {
 						return <TodoItem todo={todo} />;
 					})}
+					<Pagination
+						current={page}
+						total={count}
+						pageSize={5}
+						onChange={handlePageChange}
+					/>
 					<AddTodo />
 				</>
 			) : (

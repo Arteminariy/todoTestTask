@@ -3,8 +3,8 @@ import api from "..";
 import { Todo, TodosPaginationResponse } from "../../types";
 
 export class TodoService {
-	static getUserTodos(): Promise<AxiosResponse<TodosPaginationResponse>> {
-		return api.get<TodosPaginationResponse>('/todos')
+	static getUserTodos({limit, offset}: {limit: number, offset: number}): Promise<AxiosResponse<TodosPaginationResponse>> {
+		return api.get<TodosPaginationResponse>(`/todos?limit=${limit}&offset=${offset}`)
 	}
 	static createTodo(text: string): Promise<AxiosResponse<Todo>> {
 		return api.post<Todo>('/todos', { text })
