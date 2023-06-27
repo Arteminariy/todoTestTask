@@ -33,12 +33,14 @@ const TodoList: FC = () => {
 					{todos.map((todo) => {
 						return <TodoItem todo={todo} />;
 					})}
-					<Pagination
-						current={page}
-						total={count}
-						pageSize={5}
-						onChange={handlePageChange}
-					/>
+					{count > 5 && (
+						<Pagination
+							current={page}
+							total={count}
+							pageSize={5}
+							onChange={handlePageChange}
+						/>
+					)}
 					<AddTodo />
 				</>
 			) : (
