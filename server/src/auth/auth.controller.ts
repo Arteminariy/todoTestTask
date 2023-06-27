@@ -122,7 +122,7 @@ export class AuthController {
 
   @Public()
   @Get('activate/:id')
-  activateUser(@Param() id: string) {
+  activateUser(@Param('id') id: string) {
     return this.userService.activateUser(id);
   }
 }
