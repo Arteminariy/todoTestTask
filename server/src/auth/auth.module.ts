@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ATStrategy, RTStrategy } from './strategies';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { User } from 'src/users/entities/user.entity';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   controllers: [AuthController],
@@ -14,6 +15,7 @@ import { User } from 'src/users/entities/user.entity';
     forwardRef(() => UsersModule),
     SequelizeModule.forFeature([User]),
     JwtModule.register({}),
+    MailModule,
   ],
   exports: [AuthService, JwtModule],
 })

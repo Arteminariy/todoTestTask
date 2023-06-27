@@ -35,6 +35,14 @@ export class User extends Model<User, UserCreationAttributes> {
   })
   password: string;
 
+  @ApiProperty({ description: 'Статус пользователя', example: 'false' })
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  isActivated: boolean;
+
   @Column({
     type: DataType.STRING,
     allowNull: true,

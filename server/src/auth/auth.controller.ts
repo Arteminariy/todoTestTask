@@ -5,6 +5,8 @@ import {
   HttpStatus,
   UseGuards,
   HttpException,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -19,11 +21,15 @@ import { AuthDto } from './dto/';
 import { Tokens } from './interfaces';
 import { ATGuard, RTGuard } from './guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from './decorators';
+import { UsersService } from 'src/users/users.service';
 
 @ApiTags('Авторизация')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private userService: UsersService,
+  ) {}
 
   @Public()
   @Post('local/signUp')
@@ -112,5 +118,11 @@ export class AuthController {
     @GetCurrentUserId() userId: string,
   ) {
     return this.authService.refreshTokens(userId, refreshToken);
+  }
+
+  @Public()
+  @Get('activate/:id')
+  activateUser(@Param() id: string) {
+    return this.userService.activateUser(id);
   }
 }

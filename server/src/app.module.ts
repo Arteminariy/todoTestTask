@@ -8,6 +8,7 @@ import { Todo } from './todos/entities/todo.entity';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ATGuard } from './auth/guards';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ATGuard } from './auth/guards';
     UsersModule,
     TodosModule,
     AuthModule,
+    MailModule,
   ],
   providers: [
     {

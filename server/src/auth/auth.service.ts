@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { LogoutResponse, Tokens } from './interfaces';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +14,7 @@ export class AuthService {
     @InjectModel(User) private userRepository: typeof User,
     private userService: UsersService,
     private JWTService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async signUpLocal(authDto: AuthDto): Promise<Tokens | HttpException> {
@@ -29,13 +31,14 @@ export class AuthService {
         ...authDto,
         password: hashedPassword,
       });
-      if (!newUser) {
+      if (newUser instanceof HttpException) {
         return new HttpException(
           'Не удалось создать пользователя',
           HttpStatus.UNAUTHORIZED,
         );
       }
       if (newUser instanceof User) {
+        await this.mailService.sendActivationMail(authDto.email, newUser.id);
         const tokens = await this.getTokens(newUser.id, newUser.email);
         await this.updateRTHash(newUser.id, tokens.refreshToken);
         return tokens;

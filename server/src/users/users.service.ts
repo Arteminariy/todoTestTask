@@ -26,29 +26,6 @@ export class UsersService {
     }
   }
 
-  // async findAll(limit: number, offset: number) {
-  //   try {
-  //     const { count, rows } = await this.userRepository.findAndCountAll({
-  //       limit: limit,
-  //       offset: offset,
-  //       include: { all: true },
-  //     });
-  //     if (!rows) {
-  //       throw new HttpException(
-  //         `Не удалось получить пользователей`,
-  //         HttpStatus.INTERNAL_SERVER_ERROR,
-  //       );
-  //     }
-  //     return { count, rows };
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       'Ошибка при получении пользователя',
-  //       HttpStatus.INTERNAL_SERVER_ERROR,
-  //       { cause: error },
-  //     );
-  //   }
-  // }
-
   async findOne(id: string) {
     try {
       const user = await this.userRepository.findByPk(id);
@@ -116,6 +93,25 @@ export class UsersService {
     } catch (error) {
       throw new HttpException(
         'Ошибка при получении пользователя по email',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async activateUser(id: string) {
+    try {
+      const user = await this.userRepository.findByPk(id);
+      if (!user) {
+        throw new HttpException(
+          `Пользователь c id: ${id} не найден`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      user.isActivated = true;
+      await user.save();
+    } catch (error) {
+      throw new HttpException(
+        `Ошибка при активации`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
